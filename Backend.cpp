@@ -16,7 +16,8 @@ int main(int argc, char* argv[]) {
         cout <<"Usage: ./space <file> <search>\n";
         return 1;
     }
-    ifstream file("space.csv");
+    ifstream file(argv[1]);
+    string search = argv[2];
 
     if (!file) {
         cout << "Error opening file\n";
@@ -46,14 +47,8 @@ int main(int argc, char* argv[]) {
     }
 
     file.close();
-
-
-    string s;
-    cout << "Search: ";
-    cin >> s;
-
     for (auto &o : objects) {
-        if (o.name == s) {
+        if (o.name == search) {
             cout << "The distance to travel to " << o.name << " is " << o.dist << ".\n";
             cout << "One year on that object is " << o.time << " days.\n";
             cout << "The object is a " << o.stat << ".\n";
