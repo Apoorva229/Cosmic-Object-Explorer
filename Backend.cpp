@@ -11,7 +11,6 @@ struct Object {
     int time;
     string stat;
 };
-
 int main(int argc, char* argv[]) {
     if(argc < 3){
         cout <<"Usage: ./space <file> <search>\n";
@@ -26,8 +25,8 @@ int main(int argc, char* argv[]) {
             search += " ";
         }
     }
-    for(int i = 0; i< search.length; i++){
-        string searchlow = tolower(search[i]);
+    for(int i = 0; i< search.length(); i++){
+        search[i] = tolower(search[i]);
     }
 
     if (!file) {
@@ -37,7 +36,6 @@ int main(int argc, char* argv[]) {
 
     vector<Object> objects;
     string line;
-
     // read file line by line
     while (getline(file, line)) {
         stringstream ss(line);
@@ -58,16 +56,18 @@ int main(int argc, char* argv[]) {
     }
 
     file.close();
-    
     for (auto &o : objects) {
-        if (o.name == searchlow) {
+        string namelow = o.name;
+        for(int i = 0; i< namelow.length(); i++){
+            namelow[i]= tolower(namelow[i]);
+        }
+        if (namelow == search) {
             cout << "The distance to travel to " << o.name << " is " << o.dist << ".\n";
             cout << "One year on that object is " << o.time << " days.\n";
             cout << "The object is a " << o.stat << ".\n";
             return 0;
         }
     }
-
     cout << "Object not found.\n";
     return 1;
 }
