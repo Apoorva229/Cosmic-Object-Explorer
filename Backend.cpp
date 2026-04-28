@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <cctype>
 using namespace std;
 
 struct Object {
@@ -17,7 +18,17 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     ifstream file(argv[1]);
-    string search = argv[2];
+    string search = "";
+    // for search for multiple words
+    for(int i = 2; i< argc; i++){
+        search += argv[i];
+        if(i != argc - 1){
+            search += " ";
+        }
+    }
+    for(int i = 0; i< search.length; i++){
+        string searchlow = tolower(search[i]);
+    }
 
     if (!file) {
         cout << "Error opening file\n";
@@ -31,7 +42,7 @@ int main(int argc, char* argv[]) {
     while (getline(file, line)) {
         stringstream ss(line);
         Object obj;
-        string distr; // because distance is initially a string
+        string distr; //  a temperory variable because distance is initially a string
 
         getline(ss, obj.name, ',');
 
@@ -47,8 +58,9 @@ int main(int argc, char* argv[]) {
     }
 
     file.close();
+    
     for (auto &o : objects) {
-        if (o.name == search) {
+        if (o.name == searchlow) {
             cout << "The distance to travel to " << o.name << " is " << o.dist << ".\n";
             cout << "One year on that object is " << o.time << " days.\n";
             cout << "The object is a " << o.stat << ".\n";
