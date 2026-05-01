@@ -1,8 +1,10 @@
+const path = require("path");
 const express = require("express");
 const { exec } = require("child_process");
 
 const app = express();
 
+app.use(express.static(__dirname));
 app.get("/search", (req, res) => {
     const query = req.query.q;
 
