@@ -2,6 +2,13 @@ body{
     font-family: Garamond;
     text-align:center;
     margin-top: 50px;
+    background: linear-gradient(
+        135deg,
+        #000000,
+        #0b0f2f,
+        #1b1464
+    );
+}
 }
 
 input{
