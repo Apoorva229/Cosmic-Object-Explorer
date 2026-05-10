@@ -2,7 +2,7 @@ body{
     font-family: Garamond;
     text-align:center;
     margin-top: 50px;
-    background: radial-gradient(
+    background: linear-gradient(
         135deg,
         #000000,
         #0b0f2f,
