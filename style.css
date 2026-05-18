@@ -9,7 +9,7 @@ body{
     background:
         radial-gradient(circle at 20% 20%, #2d1b69 0%, transparent 35%),
         radial-gradient(circle at 80% 30%, #0f3460 0%, transparent 35%),
-        radial-gradient(circle at 50% 80%, #4b0082 0%, transparent 30%),
+        radial-gradient(circle at 50% 80%, #2b0082 0%, transparent 35%),
         #000000;
 }
 
@@ -27,4 +27,13 @@ button{
     margin-top: 20px;
     font-size: 18px;
     
+}
+#about{
+    margin-top: 100px;
+
+    padding: 40px;
+
+    text-align: center;
+
+    color: white;
 }
