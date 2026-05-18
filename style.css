@@ -7,10 +7,18 @@ body{
     color: white;
 
     background:
-        radial-gradient(circle at 20% 20%, #2d1b69 0%, transparent 35%),
-        radial-gradient(circle at 80% 30%, #0f3460 0%, transparent 35%),
-        radial-gradient(circle at 50% 80%, #2b0082 0%, transparent 35%),
+       body{
+    margin: 0;
+    min-height: 100vh;
+    color: white;
+
+    background:
+        radial-gradient(circle at 15% 20%, rgba(138,43,226,0.35), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(0,191,255,0.25), transparent 25%),
+        radial-gradient(circle at 50% 75%, rgba(75,0,130,0.3), transparent 30%),
+        radial-gradient(circle at 70% 60%, rgba(25,25,112,0.25), transparent 20%),
         #000000;
+}
 }
 
 
