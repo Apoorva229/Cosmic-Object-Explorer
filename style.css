@@ -26,3 +26,12 @@ button{
     font-size: 18px;
     
 }
+#about{
+    margin-top: 100px;
+
+    padding-top: 20px;
+
+    text-align: left;
+
+    color: white;
+}
