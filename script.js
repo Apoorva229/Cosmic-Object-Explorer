@@ -1,7 +1,7 @@
 console.log("JavaScript loaded");
 
 async function gethorizon() {
-    const response = await fetch("horizon");
+    const response = await fetch ("horizon");
     const data = await response.json();
     console.log(data);
 
