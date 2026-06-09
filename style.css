@@ -29,9 +29,9 @@ button{
     
 }
 #about {
-    margin-top:20px;
+    margin-bottom:20px;
     font-size: 14px;
-    padding:10px;
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-    font-color: white;
+    padding-top:150px;
+    padding-right:100px;
+    color: white;
 }
