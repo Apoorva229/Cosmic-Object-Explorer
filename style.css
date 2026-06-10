@@ -29,9 +29,10 @@ button{
     
 }
 #about {
-    margin-bottom:20px;
+    margin-bottom:10px;
     font-size: 14px;
     padding-top:150px;
     padding-right:100px;
     color: white;
+    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }

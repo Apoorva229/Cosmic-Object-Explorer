@@ -4,22 +4,28 @@ const app = express();
 
 app.use(express.static(__dirname));
 
-const NASA_KEY = "YOUR_KEY_HERE";
-
-app.get("/horizons", async (req, res) => {
+app.get("/images-api.nasa.gov", async (req, res) => {
     const query = req.query.q;
+
+    if (!query) {
+        return res.status(400).json({
+            error: "No query provided"
+        });
+    }
 
     try {
         const response = await fetch(
-            `https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND='${query}'`
+            `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image,video`
         );
 
         const data = await response.json();
 
         res.json(data);
-    }
-    catch (error) {
-        res.status(500).send("NASA API ERROR");
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: error.message
+        });
     }
 });
 

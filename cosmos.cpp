@@ -11,12 +11,13 @@ struct Object {
     int time;
     string stat;
 };
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]){
     if(argc < 3){
-        cout <<"Usage: ./space <file> <search>\n";
+        cout << "Usage: " << argv[0] << " <filename> <object name>\n";
         return 1;
     }
-    ifstream file(argv[1]);
+}
+ifstream file(argv[1]);
     string search = "";
     // for search for multiple words
     for(int i = 2; i< argc; i++){
