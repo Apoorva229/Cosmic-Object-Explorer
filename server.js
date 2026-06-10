@@ -14,7 +14,9 @@ app.get("/images-api.nasa.gov", async (req, res) => {
     }
 
     try {
-        const response = await fetch(
+
+        console.log("Searching for:", query);
+        const res = await fetch(
             `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image,video`
         );
 
