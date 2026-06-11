@@ -1,23 +1,37 @@
 async function get() {
-    const query = document.getElementById("searchBox").value;
+    const query = document.getElementById("searchBox").value.trim();
 
-    const res = await fetch(`/images-api.nasa.gov?q=${query}`);
-    const data = await res.json();
-
-    if (!data.collection.items.length) {
-        document.getElementById("result").innerHTML = "No results found";
+    if (!query) {
+        document.getElementById("result").innerHTML = "Please enter a search term";
         return;
     }
 
-    const item = data.collection.items[0];
+    try {
+        const res = await fetch(`/images-api.nasa.gov?q=${encodeURIComponent(query)}`);
+        
+        if (!res.ok) {
+            throw new Error("Search request failed");
+        }
 
-    const title = item.data[0].title;
-    const description = item.data[0].description;
-    const image = item.links[0].href;
+        const data = await res.json();
 
-    document.getElementById("result").innerHTML = `
-        <h2>${title}</h2>
-        <img src="${image}" width="400">
-        <p>${description}</p>
-    `;
+        if (!data.collection || !data.collection.items.length) {
+            document.getElementById("result").innerHTML = "No results found";
+            return;
+        }
+
+        const item = data.collection.items[0];
+        const title = item.data[0]?.title || "No title";
+        const description = item.data[0]?.description || "No description available";
+        const image = item.links?.[0]?.href;
+
+        document.getElementById("result").innerHTML = `
+            <h2>${title}</h2>
+            ${image ? `<img src="${image}" width="400" alt="${title}">` : ''}
+            <p>${description}</p>
+        `;
+    } catch (error) {
+        console.error(error);
+        document.getElementById("result").innerHTML = `Error: ${error.message}`;
+    }
 }
