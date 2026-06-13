@@ -4,6 +4,13 @@ const app = express();
 
 app.use(express.static(__dirname));
 
+// Important for Codespaces
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    next();
+});
+
 app.get("/cosmic-objects", async (req, res) => {
     const query = req.query.q;
 
@@ -14,14 +21,12 @@ app.get("/cosmic-objects", async (req, res) => {
     try {
         console.log("Searching for:", query);
 
-        // NASA Images & Videos
         const nasaRes = await fetch(
             `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image,video`
         );
 
         const nasaData = nasaRes.ok ? await nasaRes.json() : null;
 
-        // Wikipedia Summary
         let wikiData = null;
         try {
             const wikiRes = await fetch(
@@ -30,8 +35,8 @@ app.get("/cosmic-objects", async (req, res) => {
             if (wikiRes.ok) {
                 wikiData = await wikiRes.json();
             }
-        } catch (wikiError) {
-            console.log("Wikipedia fetch failed:", wikiError.message);
+        } catch (e) {
+            console.log("Wikipedia failed");
         }
 
         res.json({
