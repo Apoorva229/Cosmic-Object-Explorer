@@ -2,9 +2,10 @@ const express = require("express");
 
 const app = express();
 
+// Serve static files (HTML, CSS, JS, JSON, etc.)
 app.use(express.static(__dirname));
 
-// Important for Codespaces
+// CORS for Codespaces / development
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -55,6 +56,14 @@ app.get("/cosmic-objects", async (req, res) => {
     }
 });
 
-app.listen(3000, () => {
-    console.log(" Server running on http://localhost:3000");
-});
+// ←←← REMOVE app.listen() 
+// Add this instead for Vercel:
+module.exports = app;
+
+// Optional: Keep local running capability
+if (require.main === module) {
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log(`Server running on http://localhost:${port}`);
+    });
+}
