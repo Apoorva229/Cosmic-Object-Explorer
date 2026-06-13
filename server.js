@@ -2,16 +2,22 @@ const express = require("express");
 
 const app = express();
 
-// Serve static files (HTML, CSS, JS, JSON, etc.)
+// Serve static files (HTML, CSS, JS, images, etc.)
 app.use(express.static(__dirname));
 
-// CORS for Codespaces / development
+// CORS
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     next();
 });
 
+// ←←← ADD THIS ROOT ROUTE
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/index.html");   // Change if your main file has a different name
+});
+
+// Your existing API route
 app.get("/cosmic-objects", async (req, res) => {
     const query = req.query.q;
 
@@ -56,11 +62,9 @@ app.get("/cosmic-objects", async (req, res) => {
     }
 });
 
-// ←←← REMOVE app.listen() 
-// Add this instead for Vercel:
 module.exports = app;
 
-// Optional: Keep local running capability
+// Local development only
 if (require.main === module) {
     const port = process.env.PORT || 3000;
     app.listen(port, () => {
