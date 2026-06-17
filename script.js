@@ -1,74 +1,76 @@
-// script.js - Clean & Complete Version
+// script.js - Clean & Compact Version with TLE
 async function get() {
     const query = document.getElementById("searchBox").value.trim();
     const resultDiv = document.getElementById("result");
 
     if (!query) {
-        resultDiv.innerHTML = "<p style='color: red;'>Please enter a search term</p>";
+        resultDiv.innerHTML = `<p style="color: red;">Please enter a search term</p>`;
         return;
     }
 
-    resultDiv.innerHTML = "<p>Searching for cosmic information...</p>";
+    resultDiv.innerHTML = `<p>Searching for "${query}"...</p>`;
 
     try {
         const res = await fetch(`/cosmic-objects?q=${encodeURIComponent(query)}`);
-
-        if (!res.ok) {
-            throw new Error("Failed to fetch data from server");
-        }
+        if (!res.ok) throw new Error("Server error");
 
         const data = await res.json();
-
         let html = "";
 
-        // Wikipedia Information
+        // Wikipedia Info
         if (data.info) {
             html += `
                 <h2>${data.info.title}</h2>
-                ${data.info.image ? 
-                    `<img src="${data.info.image}" width="320" style="float: right; margin: 10px 0 15px 15px; border-radius: 8px;" alt="${data.info.title}">` 
-                    : ''}
-                <p><strong>About ${data.info.title}:</strong></p>
-                <p>${data.info.description}</p>
-                <hr style="margin: 20px 0;">
+                ${data.info.image ? `<img src="${data.info.image}" width="300" style="float:right; margin:10px 0 15px 15px; border-radius:8px;" alt="${data.info.title}">` : ''}
+                <p>${data.info.description || "No description available."}</p>
+                <hr>
             `;
         } else {
-            html += `<h2>${query}</h2><p>No detailed information found.</p>`;
+            html += `<h2>${query}</h2><p>No summary found.</p><hr>`;
         }
 
-        // NASA Media (Images + YouTube Videos)
-        if (data.nasaItems && data.nasaItems.length > 0) {
-            html += `<h3>NASA Images & Media</h3>`;
+        // TLE Orbital Data
+        if (data.tle?.length > 0) {
+            html += `<h3>🛰️ Orbital Data (TLE)</h3>`;
+            data.tle.slice(0, 3).forEach(sat => {
+                html += `
+                    <div style="margin:12px 0; padding:12px; border:1px solid #4a90e2; border-radius:8px; background:#0f172a;">
+                        <strong>${sat.name}</strong> <small>(NORAD: ${sat.norad_cat_id})</small>
+                        <pre style="font-size:0.8em; background:#1e2937; padding:8px; border-radius:6px; margin:8px 0;">
+Line 1: ${sat.line1}
+Line 2: ${sat.line2}
+                        </pre>
+                    </div>
+                `;
+            });
+            html += `<hr>`;
+        } else {
+            html += `<p><strong>No TLE data found.</strong> Try satellite names like ISS, Hubble, Starlink.</p><hr>`;
+        }
 
-            data.nasaItems.slice(0, 8).forEach(item => {
-                const mediaUrl = item.links && item.links[0] ? item.links[0].href : null;
-                const title = item.data && item.data[0] ? item.data[0].title : "NASA Media";
-                const desc = item.data && item.data[0] ? item.data[0].description : "";
+        // NASA Media
+        if (data.nasaItems?.length > 0) {
+            html += `<h3>NASA Images & Videos</h3>`;
+            data.nasaItems.slice(0, 6).forEach(item => {
+                const link = item.links?.[0]?.href;
+                if (!link) return;
 
-                if (!mediaUrl) return;
+                const title = item.data?.[0]?.title || "NASA Media";
+                let media = "";
 
-                let mediaHTML = "";
-
-                if (mediaUrl.includes("youtube.com") || mediaUrl.includes("youtu.be")) {
-                    let videoId = mediaUrl.split("v=")[1] || mediaUrl.split("/").pop().split("?")[0];
-                    mediaHTML = `
-                        <iframe width="420" height="236" 
-                            src="https://www.youtube.com/embed/${videoId}" 
-                            frameborder="0" allowfullscreen>
-                        </iframe>`;
-                } 
-                else if (mediaUrl.endsWith('.mp4')) {
-                    mediaHTML = `<video width="420" controls><source src="${mediaUrl}" type="video/mp4"></video>`;
-                } 
-                else {
-                    mediaHTML = `<img src="${mediaUrl}" width="420" style="border-radius:6px;" alt="${title}">`;
+                if (link.includes("youtube") || link.includes("youtu.be")) {
+                    const vid = link.split("v=")[1] || link.split("/").pop().split("?")[0];
+                    media = `<iframe width="420" height="236" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+                } else if (link.endsWith('.mp4')) {
+                    media = `<video width="420" controls><source src="${link}" type="video/mp4"></video>`;
+                } else {
+                    media = `<img src="${link}" width="420" style="border-radius:6px;" alt="${title}">`;
                 }
 
                 html += `
-                    <div style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-                        ${mediaHTML}
+                    <div style="margin:15px 0; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                        ${media}
                         <p><strong>${title}</strong></p>
-                        ${desc ? `<p style="font-size:0.9em;color:#555;">${desc.substring(0,160)}...</p>` : ''}
                     </div>
                 `;
             });
@@ -78,8 +80,8 @@ async function get() {
 
         resultDiv.innerHTML = html;
 
-    } catch (error) {
-        console.error(error);
-        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
     }
 }
