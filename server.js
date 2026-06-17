@@ -5,19 +5,18 @@ const app = express();
 // Serve static files (HTML, CSS, JS, images, etc.)
 app.use(express.static(__dirname));
 
-// CORS
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     next();
 });
 
-// ←←← ADD THIS ROOT ROUTE
+// 
 app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/index.html");   // Change if your main file has a different name
+    res.sendFile(__dirname + "/index.html"); 
 });
 
-// Your existing API route
+// Existing API route
 app.get("/cosmic-objects", async (req, res) => {
     const query = req.query.q;
 
@@ -45,6 +44,17 @@ app.get("/cosmic-objects", async (req, res) => {
         } catch (e) {
             console.log("Wikipedia failed");
         }
+        let tleData = null;
+        try{
+            const tleRes = await fetch(`https://tle.ivanstanojevic.me/api/tle?search=${encodeURIComponent(query)}`
+        );
+        if(tleRes.ok){
+            const tleJson = await tleRes.json();
+            tleData = tleJson;
+        }
+        } catch(e){
+            console.log("Search Result failed");
+        }
 
         res.json({
             query: query,
@@ -53,7 +63,8 @@ app.get("/cosmic-objects", async (req, res) => {
                 description: wikiData.extract,
                 image: wikiData.thumbnail?.source || null
             } : null,
-            nasaItems: nasaData?.collection?.items || []
+            nasaItems: nasaData?.collection?.items || [],
+            tle: tleData || []
         });
 
     } catch (error) {
