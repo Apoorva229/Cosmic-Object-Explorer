@@ -44,17 +44,20 @@ app.get("/cosmic-objects", async (req, res) => {
         } catch (e) {
             console.log("Wikipedia failed");
         }
-        let tleData = null;
-        try{
-            const tleRes = await fetch(`https://tle.ivanstanojevic.me/api/tle?search=${encodeURIComponent(query)}`
-        );
-        if(tleRes.ok){
-            const tleJson = await tleRes.json();
-            tleData = tleJson;
-        }
-        } catch(e){
-            console.log("Search Result failed");
-        }
+        // 3. TLE API (Fixed)
+let tleData = [];
+try {
+    const tleRes = await fetch(
+        `https://tle.ivanstanojevic.me/api/tle?search=${encodeURIComponent(query)}`
+    );
+    
+    if (tleRes.ok) {
+        const tleJson = await tleRes.json();
+        tleData = tleJson.member || [];
+    }
+} catch (e) {
+    console.log("TLE API fetch failed:", e.message);
+}
 
         res.json({
             query: query,
