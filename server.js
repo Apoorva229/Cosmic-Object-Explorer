@@ -58,6 +58,20 @@ try {
 } catch (e) {
     console.log("TLE API fetch failed:", e.message);
 }
+// 4. Nasa exoplanet API
+let exoData = [];
+try {
+    const exoRes = await fetch(
+        `https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?)}`
+    );
+    if (exoRes.ok){
+        const exoJson = await exoRes.json();
+        exoData = exoJson || [];
+    }
+} catch (e){
+    console.log("Exoplanet API fetch failed:");
+}
+
 
         res.json({
             query: query,
@@ -67,7 +81,8 @@ try {
                 image: wikiData.thumbnail?.source || null
             } : null,
             nasaItems: nasaData?.collection?.items || [],
-            tle: tleData || []
+            tle: tleData || [],
+            exoplanets: exoData || []
         });
 
     } catch (error) {
