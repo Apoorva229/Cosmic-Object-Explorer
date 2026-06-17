@@ -1,4 +1,4 @@
-// script.js - Clean & Compact Version with TLE
+// script.js - Fixed TLE + Clean Code
 async function get() {
     const query = document.getElementById("searchBox").value.trim();
     const resultDiv = document.getElementById("result");
@@ -17,7 +17,7 @@ async function get() {
         const data = await res.json();
         let html = "";
 
-        // Wikipedia Info
+        // Wikipedia
         if (data.info) {
             html += `
                 <h2>${data.info.title}</h2>
@@ -29,14 +29,14 @@ async function get() {
             html += `<h2>${query}</h2><p>No summary found.</p><hr>`;
         }
 
-        // TLE Orbital Data
+        // TLE Orbital Data (Fixed)
         if (data.tle?.length > 0) {
             html += `<h3>🛰️ Orbital Data (TLE)</h3>`;
             data.tle.slice(0, 3).forEach(sat => {
                 html += `
                     <div style="margin:12px 0; padding:12px; border:1px solid #4a90e2; border-radius:8px; background:#0f172a;">
-                        <strong>${sat.name}</strong> <small>(NORAD: ${sat.norad_cat_id})</small>
-                        <pre style="font-size:0.8em; background:#1e2937; padding:8px; border-radius:6px; margin:8px 0;">
+                        <strong>${sat.name}</strong> <small>(NORAD: ${sat.satelliteId || sat.norad_cat_id})</small>
+                        <pre style="font-size:0.82em; background:#1e2937; padding:8px; border-radius:6px; margin:8px 0; overflow-x:auto;">
 Line 1: ${sat.line1}
 Line 2: ${sat.line2}
                         </pre>
@@ -45,7 +45,7 @@ Line 2: ${sat.line2}
             });
             html += `<hr>`;
         } else {
-            html += `<p><strong>No TLE data found.</strong> Try satellite names like ISS, Hubble, Starlink.</p><hr>`;
+            html += `<p><strong>No TLE data found.</strong><br>Try: ISS, Hubble, Starlink, NOAA, etc.</p><hr>`;
         }
 
         // NASA Media
@@ -56,16 +56,11 @@ Line 2: ${sat.line2}
                 if (!link) return;
 
                 const title = item.data?.[0]?.title || "NASA Media";
-                let media = "";
-
-                if (link.includes("youtube") || link.includes("youtu.be")) {
-                    const vid = link.split("v=")[1] || link.split("/").pop().split("?")[0];
-                    media = `<iframe width="420" height="236" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
-                } else if (link.endsWith('.mp4')) {
-                    media = `<video width="420" controls><source src="${link}" type="video/mp4"></video>`;
-                } else {
-                    media = `<img src="${link}" width="420" style="border-radius:6px;" alt="${title}">`;
-                }
+                let media = link.includes("youtube") || link.includes("youtu.be") 
+                    ? `<iframe width="420" height="236" src="https://www.youtube.com/embed/${link.split("v=")[1] || link.split("/").pop().split("?")[0]}" frameborder="0" allowfullscreen></iframe>`
+                    : link.endsWith('.mp4')
+                    ? `<video width="420" controls><source src="${link}" type="video/mp4"></video>`
+                    : `<img src="${link}" width="420" style="border-radius:6px;" alt="${title}">`;
 
                 html += `
                     <div style="margin:15px 0; padding:10px; border:1px solid #ddd; border-radius:8px;">
