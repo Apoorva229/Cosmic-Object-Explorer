@@ -2,7 +2,7 @@ const express = require("express");
 
 const app = express();
 
-// Serve static files (HTML, CSS, JS, images, etc.)
+// Serve static files
 app.use(express.static(__dirname));
 
 app.use((req, res, next) => {
@@ -11,14 +11,13 @@ app.use((req, res, next) => {
     next();
 });
 
-// 
 app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/index.html"); 
+    res.sendFile(__dirname + "/index.html");
 });
 
-// Existing API route
+// Main API route
 app.get("/cosmic-objects", async (req, res) => {
-    const query = req.query.q;
+    const query = req.query.q?.trim();
 
     if (!query) {
         return res.status(400).json({ error: "No query provided" });
@@ -27,12 +26,13 @@ app.get("/cosmic-objects", async (req, res) => {
     try {
         console.log("Searching for:", query);
 
+        // 1. NASA Images & Videos
         const nasaRes = await fetch(
             `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image,video`
         );
-
         const nasaData = nasaRes.ok ? await nasaRes.json() : null;
 
+        // 2. Wikipedia
         let wikiData = null;
         try {
             const wikiRes = await fetch(
@@ -42,36 +42,44 @@ app.get("/cosmic-objects", async (req, res) => {
                 wikiData = await wikiRes.json();
             }
         } catch (e) {
-            console.log("Wikipedia failed");
+            console.log("Wikipedia fetch failed");
         }
-        // 3. TLE API (Fixed)
-let tleData = [];
-try {
-    const tleRes = await fetch(
-        `https://tle.ivanstanojevic.me/api/tle?search=${encodeURIComponent(query)}`
-    );
-    
-    if (tleRes.ok) {
-        const tleJson = await tleRes.json();
-        tleData = tleJson.member || [];
-    }
-} catch (e) {
-    console.log("TLE API fetch failed:", e.message);
-}
-// 4. Nasa exoplanet API
-let exoData = [];
-try {
-    const exoRes = await fetch(
-        `https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?)}`
-    );
-    if (exoRes.ok){
-        const exoJson = await exoRes.json();
-        exoData = exoJson || [];
-    }
-} catch (e){
-    console.log("Exoplanet API fetch failed:");
-}
 
+        // 3. TLE (Satellites)
+        let tleData = [];
+        try {
+            const tleRes = await fetch(
+                `https://tle.ivanstanojevic.me/api/tle?search=${encodeURIComponent(query)}`
+            );
+            if (tleRes.ok) {
+                const tleJson = await tleRes.json();
+                tleData = tleJson.member || [];
+            }
+        } catch (e) {
+            console.log("TLE API failed:", e.message);
+        }
+
+        // 4. EXOPLANET DATA 
+        let exoData = [];
+        try {
+            const searchTerm = encodeURIComponent(query);
+            
+            const exoUrl = `https://exoplanetarchive.ipac.caltech.edu/TAP/sync?` +
+                `query=select+pl_name,hostname,pl_masse,pl_rade,pl_orbper,sy_dist,disc_year,discoverymethod ` +
+                `from+ps+` +
+                `where+pl_name+like+'%25${searchTerm}%25'+or+hostname+like+'%25${searchTerm}%25' ` +
+                `&format=json`;
+
+            const exoRes = await fetch(exoUrl);
+            
+            if (exoRes.ok) {
+                exoData = await exoRes.json();
+                // Limit results to avoid huge responses
+                exoData = exoData.slice(0, 8);
+            }
+        } catch (e) {
+            console.log("Exoplanet API failed:", e.message);
+        }
 
         res.json({
             query: query,
@@ -93,7 +101,6 @@ try {
 
 module.exports = app;
 
-// Local development only
 if (require.main === module) {
     const port = process.env.PORT || 3000;
     app.listen(port, () => {
