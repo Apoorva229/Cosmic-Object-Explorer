@@ -87,8 +87,43 @@ Line 2: ${sat.line2}
                     </div>
                 `;
             });
+            html += `<hr>`;
         } else {
-            html += `<p>No NASA media found.</p>`;
+            html += `<p>No NASA media found.</p><hr>`;
+        }
+
+        // === EXOPLANET DATA ===
+        if (data.exoplanets?.length > 0) {
+            html += `<h3>🌌 Exoplanet Data</h3>`;
+            
+            data.exoplanets.slice(0, 5).forEach(planet => {
+                const name = planet.pl_name || planet.name || "Unknown Planet";
+                const host = planet.hostname || planet.host || "Unknown Star";
+                const mass = planet.pl_masse ? parseFloat(planet.pl_masse).toFixed(2) + " Earth masses" : "N/A";
+                const radius = planet.pl_rade ? parseFloat(planet.pl_rade).toFixed(2) + " Earth radii" : "N/A";
+                const period = planet.pl_orbper ? parseFloat(planet.pl_orbper).toFixed(1) + " days" : "N/A";
+                const distance = planet.sy_dist ? parseFloat(planet.sy_dist).toFixed(1) + " pc" : "N/A";
+                const discovery = planet.disc_year || "N/A";
+
+                html += `
+                    <div style="margin:15px 0; padding:15px; border:1px solid #22c55e; border-radius:10px; background:#0f172a;">
+                        <h4>${name} <small>around ${host}</small></h4>
+                        
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin:12px 0; font-size:0.95em;">
+                            <div><strong>Mass:</strong> ${mass}</div>
+                            <div><strong>Radius:</strong> ${radius}</div>
+                            <div><strong>Orbital Period:</strong> ${period}</div>
+                            <div><strong>Distance:</strong> ${distance}</div>
+                            <div><strong>Discovered:</strong> ${discovery}</div>
+                        </div>
+                        
+                        ${planet.pl_discmethod ? `<p><strong>Method:</strong> ${planet.pl_discmethod}</p>` : ''}
+                    </div>
+                `;
+            });
+            html += `<hr>`;
+        } else {
+            html += `<p><strong>No exoplanet data found.</strong><br>Try searching for known exoplanets like "TRAPPIST-1", "Kepler-452b", "Proxima Centauri b", etc.</p><hr>`;
         }
 
         resultDiv.innerHTML = html;
