@@ -3,7 +3,10 @@ body{
     min-height: 100vh;
     color: white;
     text-align : center;
-    background: 
+    padding-bottom : 100px;
+    padding-left: 40px;
+    border:thick solid white;
+    background :
     linear-gradient(
         rgba(0,0,0,0.6),
         rgba(0,0,0,0.6)
@@ -15,8 +18,9 @@ body{
 }
 
 input{
-    padding: 10px;
     width: 250px;
+    font: 18px 'Orbitron';
+
 }
 
 button{
@@ -25,7 +29,8 @@ button{
 }
 #result {
     margin-top: 20px;
-    font-size: 18px;
+    font: 18px 'Orbitron';
+    bold: 600;
     
 }
 #about {

@@ -1,7 +1,22 @@
-async function get() {
-    const query = document.getElementById("searchBox").value.trim();
-    const resultDiv = document.getElementById("result");
+document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("messageInput");
+    
+    if (input) {
+        input.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();        // Prevent default behavior
+                get();                     // Call your search function
+            }
+        });
 
+        input.focus();{
+
+        }
+    }
+    });
+async function get() {
+    const query = document.getElementById("messageInput").value.trim();
+         const resultDiv = document.getElementById("result");
     if (!query) {
         resultDiv.innerHTML = `<p style="color: red;">Please enter a search term</p>`;
         return;
