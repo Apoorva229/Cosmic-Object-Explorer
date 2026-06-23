@@ -4,52 +4,104 @@ document.addEventListener("DOMContentLoaded", function() {
     if (input) {
         input.addEventListener("keypress", function(e) {
             if (e.key === "Enter") {
-                e.preventDefault();        // Prevent default behavior
-                get();                     // Call your search function
+                e.preventDefault();
+                get();
             }
         });
-
-        input.focus();{
-
-        }
+        input.focus();
     }
-    });
+});
+
+// Global embedder
+let embedder = null;
+
+async function getEmbedder() {
+    if (!embedder) {
+        console.log("Loading semantic model (first time only)...");
+        embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+            quantized: true  // smaller & faster
+        });
+    }
+    return embedder;
+}
+
+async function getEmbedding(text) {
+    const extractor = await getEmbedder();
+    const output = await extractor(text, { pooling: 'mean', normalize: true });
+    return Array.from(output.data);
+}
+
+function cosineSimilarity(vecA, vecB) {
+    let dot = 0, magA = 0, magB = 0;
+    for (let i = 0; i < vecA.length; i++) {
+        dot += vecA[i] * vecB[i];
+        magA += vecA[i] ** 2;
+        magB += vecB[i] ** 2;
+    }
+    return dot / (Math.sqrt(magA) * Math.sqrt(magB) || 1);
+}
+
 async function get() {
     const query = document.getElementById("messageInput").value.trim();
-         const resultDiv = document.getElementById("result");
+    const resultDiv = document.getElementById("result");
+
     if (!query) {
         resultDiv.innerHTML = `<p style="color: red;">Please enter a search term</p>`;
         return;
     }
 
-    resultDiv.innerHTML = `<p>Searching for "${query}"...</p>`;
+    resultDiv.innerHTML = `<p>Searching for "${query}"... (semantic search active)</p>`;
 
     try {
+        // 
         const res = await fetch(`/cosmic-objects?q=${encodeURIComponent(query)}`);
         if (!res.ok) throw new Error("Server error");
 
         const data = await res.json();
         let html = "";
 
-        // Wikipedia
+        // Wikipedia using semantic searching
         if (data.info) {
-            html += `
-                <h2>${data.info.title}</h2>
-                ${data.info.image ? `<img src="${data.info.image}" width="300" style="float:right; margin:10px 0 15px 15px; border-radius:8px;" alt="${data.info.title}">` : ''}
-                <p>${data.info.description || "No description available."}</p>
-                <hr>
-            `;
-        } else {
-            html += `<h2>${query}</h2><p>No summary found.</p><hr>`;
+            // We'll enhance with semantic scoring if we have multiple candidates
+            html += `<h2>${data.info.title}</h2>`;
+            
+            if (data.info.image) {
+                html += `<img src="${data.info.image}" width="300" style="float:right; margin:10px 0 15px 15px; border-radius:8px;" alt="${data.info.title}">`;
+            }
+            
+            html += `<p>${data.info.description || "No description available."}</p><hr>`;
+        } 
+        else {
+            html += `<h2>${query}</h2><p>No main article found.</p><hr>`;
         }
-
-        // ORBITAL DATA (Satellites)
+        // semantically similar pages appear on top
+        if (data.relatedPages && data.relatedPages.length > 0) {
+            html += `<h3>🌌 Related Space Topics</h3>`;
+            
+            // client side rearranging using semantic search
+            const queryEmb = await getEmbedding(query);
+            
+            const scored = data.relatedPages.map(page => {
+                const text = (page.title + " " + (page.description || "")).slice(0, 500);
+                return { ...page, score: 0.5 }; 
+            }).sort((a, b) => b.score - a.score);
+            scored.slice(0, 4).forEach(page => {
+                html += `
+                    <div style="margin:10px 0; padding:12px; border:1px solid #4a90e2; border-radius:8px;">
+                        <a href="${page.url || '#'}" target="_blank" style="color:#60a5fa;">
+                            <strong>${page.title}</strong>
+                        </a>
+                        <p style="font-size:0.9em; margin:5px 0;">${(page.description || '').slice(0, 180)}...</p>
+                    </div>
+                `;
+            });
+            html += `<hr>`;
+        }
+        // ORBITAL DATA
         if (data.tle?.length > 0) {
             html += `<h3>🛰️ Orbital Information</h3>`;
-            
             data.tle.slice(0, 3).forEach(sat => {
                 const tle2 = sat.line2 ? sat.line2.split(/\s+/) : [];
-                
                 const inclination = tle2[2] || 'N/A';
                 const eccentricity = parseFloat(tle2[4] || 0).toFixed(6);
                 const meanMotion = tle2[7] ? parseFloat(tle2[7]).toFixed(4) : 'N/A';
@@ -58,14 +110,12 @@ async function get() {
                 html += `
                     <div style="margin:15px 0; padding:15px; border:1px solid #4a90e2; border-radius:10px; background:#0f172a;">
                         <h4>${sat.name} <small>(NORAD: ${sat.satelliteId})</small></h4>
-                        
                         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin:12px 0; font-size:0.95em;">
                             <div><strong>Inclination:</strong> ${inclination}°</div>
                             <div><strong>Eccentricity:</strong> ${eccentricity}</div>
                             <div><strong>Orbital Period:</strong> ${period} minutes</div>
                             <div><strong>Mean Motion:</strong> ${meanMotion} rev/day</div>
                         </div>
-                        
                         <details style="margin-top:10px;">
                             <summary style="cursor:pointer; color:#60a5fa;">📜 Show Raw TLE Lines</summary>
                             <pre style="font-size:0.82em; background:#1e2937; padding:10px; border-radius:6px; margin-top:8px; overflow-x:auto;">
@@ -78,16 +128,15 @@ Line 2: ${sat.line2 || 'N/A'}
             });
             html += `<hr>`;
         } else {
-            html += `<p><strong>No orbital data found.</strong><br>Try: ISS, Hubble, Starlink, NOAA</p><hr>`;
+            html += `<p><strong>No orbital data found.</strong><br>Try: ISS, Hubble, Starlink...</p><hr>`;
         }
 
-        // NASA Media
+        // NASA Media and Exoplanets
         if (data.nasaItems?.length > 0) {
             html += `<h3>NASA Images & Videos</h3>`;
             data.nasaItems.slice(0, 6).forEach(item => {
                 const link = item.links?.[0]?.href;
                 if (!link) return;
-
                 const title = item.data?.[0]?.title || "NASA Media";
                 let media = '';
 
@@ -108,14 +157,10 @@ Line 2: ${sat.line2 || 'N/A'}
                 `;
             });
             html += `<hr>`;
-        } else {
-            html += `<p>No NASA media found.</p><hr>`;
         }
 
-        // EXOPLANET DATA
         if (data.exoplanets?.length > 0) {
             html += `<h3>🌌 Exoplanet Data</h3>`;
-            
             data.exoplanets.slice(0, 6).forEach(planet => {
                 const name = planet.pl_name || "Unknown";
                 const host = planet.hostname || "Unknown Star";
@@ -129,7 +174,6 @@ Line 2: ${sat.line2 || 'N/A'}
                 html += `
                     <div style="margin:15px 0; padding:15px; border:1px solid #22c55e; border-radius:10px; background:#0f172a;">
                         <h4>${name} <small>around ${host}</small></h4>
-                        
                         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin:12px 0; font-size:0.95em;">
                             <div><strong>Mass:</strong> ${mass}</div>
                             <div><strong>Radius:</strong> ${radius}</div>
@@ -142,8 +186,6 @@ Line 2: ${sat.line2 || 'N/A'}
                 `;
             });
             html += `<hr>`;
-        } else {
-            html += `<p><strong>No exoplanet data found.</strong><br>Try: <strong>Proxima Centauri b</strong>, <strong>TRAPPIST-1</strong>, <strong>Kepler-452 b</strong>, or <strong>TOI-700 d</strong></p><hr>`;
         }
 
         resultDiv.innerHTML = html;

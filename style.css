@@ -1,11 +1,13 @@
 body{
     margin: 0;
-    min-height: 100vh;
+    min-height: 150vh;
+    font-size: 25px;
     color: white;
     text-align : center;
     padding-bottom : 100px;
     padding-left: 40px;
     border:thick solid white;
+    font-family: 'Garamond';
     background :
     linear-gradient(
         rgba(0,0,0,0.6),
@@ -30,14 +32,27 @@ button{
 #result {
     margin-top: 20px;
     font: 18px 'Orbitron';
-    bold: 600;
+    font-weight: 600;
     
 }
 #about {
     margin-bottom:10px;
     font-size: 14px;
-    padding-top:150px;
-    padding-right:100px;
+    padding-top:200px;
+    padding-right:150px;
     color: white;
+    text-align: left;
     font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+#heading{
+    font-size: 25px;
+    font-family: 'Orbitron';
+    text-align: center;
+    font-weight: 800;
+    color:  white;
+}
+#content-box {
+    width: 100%;
+    height: 150px;
+    background-color: rgba(38, 3, 94, 0);
 }
