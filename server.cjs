@@ -4,7 +4,7 @@ const { pipeline } = require("@xenova/transformers");
 const app = express();
 const path = require('path');
 // Static files + CORS
-app.use(express.static(path.join(__dirname, "..")));
+app.use(express.static(path.join(__dirname)));
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -14,7 +14,6 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
-
 // Transformers Setup 
 let embedder = null;
 let spaceIndex = [];
