@@ -2,13 +2,9 @@ const express = require("express");
 const { pipeline } = require("@xenova/transformers");
 
 const app = express();
-
-const path = require("path");
-const __dirname = path.dirname(require.main.filename || process.cwd());
-
+const path = require('path');
 // Static files + CORS
 app.use(express.static(path.join(__dirname, "..")));
-
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -16,10 +12,10 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "..", "index.html")); // fixed filename
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ====================== Transformers Setup ======================
+// Transformers Setup 
 let embedder = null;
 let spaceIndex = [];
 
@@ -120,7 +116,7 @@ app.get("/cosmic-objects", async (req, res) => {
             }
         } catch (e) { console.log("TLE API failed"); }
 
-        // Exoplanets (fixed typos)
+        // Exoplanets
         let exoData = [];
         try {
             const searchTerm = encodeURIComponent(query);
