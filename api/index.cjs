@@ -1,10 +1,11 @@
 const express = require("express");
-const { pipeline } = require("@xenova/transformers");
+const path = require("path");
 
 const app = express();
-const path = require('path');
+
 // Static files + CORS
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, "..")));
+
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -12,15 +13,17 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+    res.sendFile(path.join(__dirname, "..", "index.html"));
 });
-// Transformers Setup 
+
+// 
 let embedder = null;
 let spaceIndex = [];
 
 async function getEmbedder() {
     if (!embedder) {
         console.log("Loading embedding model...");
+        const { pipeline } = await import("@xenova/transformers");
         embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
             quantized: true
         });
@@ -77,7 +80,7 @@ async function buildSpaceIndex() {
     console.log(`Indexed ${spaceIndex.length} space topics`);
 }
 
-//Main Route
+// Main Route
 app.get("/cosmic-objects", async (req, res) => {
     const query = req.query.q?.trim();
     if (!query) {
@@ -88,42 +91,32 @@ app.get("/cosmic-objects", async (req, res) => {
         console.log("Searching for:", query);
         await buildSpaceIndex();
 
-        // NASA
+        // NASA with API key support
         const nasaRes = await fetch(
-            `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image,video`
+            `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image,video&api_key=${process.env.NASA_API_KEY || ''}`
         );
         const nasaData = nasaRes.ok ? await nasaRes.json() : null;
 
-        // Wikipedia
+        // Wikipedia, TLE, Exoplanets
         let wikiData = null;
         try {
-            const wikiRes = await fetch(
-                `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`
-            );
+            const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
             if (wikiRes.ok) wikiData = await wikiRes.json();
         } catch (e) { console.log("Wikipedia fetch failed"); }
 
-        // TLE
         let tleData = [];
         try {
-            const tleRes = await fetch(
-                `https://tle.ivanstanojevic.me/api/tle?search=${encodeURIComponent(query)}`
-            );
+            const tleRes = await fetch(`https://tle.ivanstanojevic.me/api/tle?search=${encodeURIComponent(query)}`);
             if (tleRes.ok) {
                 const tleJson = await tleRes.json();
                 tleData = tleJson.member || [];
             }
         } catch (e) { console.log("TLE API failed"); }
 
-        // Exoplanets
         let exoData = [];
         try {
             const searchTerm = encodeURIComponent(query);
-            const exoURL = `https://exoplanetarchive.ipac.caltech.edu/TAP/sync?` +
-                `query=select+pl_name,hostname,pl_masse,pl_rade,pl_orbper,sy_dist,disc_year,discoverymethod ` +
-                `from+ps+` +
-                `where+pl_name+like+'%25${searchTerm}%25'+or+hostname+like+'%25${searchTerm}%25' ` +
-                `&format=json`;
+            const exoURL = `https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+pl_name,hostname,pl_masse,pl_rade,pl_orbper,sy_dist,disc_year,discoverymethod from+ps+where+pl_name+like+'%25${searchTerm}%25'+or+hostname+like+'%25${searchTerm}%25'&format=json`;
             const exoRes = await fetch(exoURL);
             if (exoRes.ok) {
                 exoData = await exoRes.json();
@@ -144,7 +137,9 @@ app.get("/cosmic-objects", async (req, res) => {
                 .filter(item => item.score > 0.3)
                 .slice(0, 6)
                 .map(({ embedding, ...rest }) => rest);
-        } catch (e) { console.log("Semantic search failed"); }
+        } catch (e) {
+            console.log("Semantic search failed");
+        }
 
         res.json({
             query,

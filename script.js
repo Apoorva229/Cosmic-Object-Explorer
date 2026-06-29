@@ -12,35 +12,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// Global embedder
-let embedder = null;
-
-async function getEmbedder() {
-    if (!embedder) {
-        console.log("Loading semantic model (first time only)...");
-        embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-            quantized: true  // smaller & faster
-        });
-    }
-    return embedder;
-}
-
-async function getEmbedding(text) {
-    const extractor = await getEmbedder();
-    const output = await extractor(text, { pooling: 'mean', normalize: true });
-    return Array.from(output.data);
-}
-
-function cosineSimilarity(vecA, vecB) {
-    let dot = 0, magA = 0, magB = 0;
-    for (let i = 0; i < vecA.length; i++) {
-        dot += vecA[i] * vecB[i];
-        magA += vecA[i] ** 2;
-        magB += vecB[i] ** 2;
-    }
-    return dot / (Math.sqrt(magA) * Math.sqrt(magB) || 1);
-}
-
 async function get() {
     const query = document.getElementById("messageInput").value.trim();
     const resultDiv = document.getElementById("result");
@@ -50,55 +21,44 @@ async function get() {
         return;
     }
 
-    resultDiv.innerHTML = `<p>Searching for "${query}"... (semantic search active)</p>`;
+    resultDiv.innerHTML = `<p>Searching for "${query}"... (this may take a few seconds on first search)</p>`;
 
     try {
-        // 
         const res = await fetch(`/cosmic-objects?q=${encodeURIComponent(query)}`);
-        if (!res.ok) throw new Error("Server error");
+        if (!res.ok) throw new Error("Server returned error");
 
         const data = await res.json();
-        let html = "";
+        let html = `<h2>${data.query || query}</h2>`;
 
-        // Wikipedia using semantic searching
+        // Wikipedia Main Info
         if (data.info) {
-            // We'll enhance with semantic scoring if we have multiple candidates
-            html += `<h2>${data.info.title}</h2>`;
-            
+            html += `<h3>${data.info.title}</h3>`;
             if (data.info.image) {
-                html += `<img src="${data.info.image}" width="300" style="float:right; margin:10px 0 15px 15px; border-radius:8px;" alt="${data.info.title}">`;
+                html += `<img src="${data.info.image}" width="320" style="border-radius:8px; margin:10px 0; float:right;" alt="${data.info.title}">`;
             }
-            
             html += `<p>${data.info.description || "No description available."}</p><hr>`;
-        } 
-        else {
-            html += `<h2>${query}</h2><p>No main article found.</p><hr>`;
         }
-        // semantically similar pages appear on top
+
+        // Related Semantic Pages
         if (data.relatedPages && data.relatedPages.length > 0) {
             html += `<h3>🌌 Related Space Topics</h3>`;
-            
-            // client side rearranging using semantic search
-            const queryEmb = await getEmbedding(query);
-            
-            const scored = data.relatedPages.map(page => {
-                const text = (page.title + " " + (page.description || "")).slice(0, 500);
-                return { ...page, score: 0.5 }; 
-            }).sort((a, b) => b.score - a.score);
-            scored.slice(0, 4).forEach(page => {
+            data.relatedPages.forEach(page => {
                 html += `
-                    <div style="margin:10px 0; padding:12px; border:1px solid #4a90e2; border-radius:8px;">
-                        <a href="${page.url || '#'}" target="_blank" style="color:#60a5fa;">
+                    <div style="margin:12px 0; padding:12px; border:1px solid #4a90e2; border-radius:8px;">
+                        <a href="${page.url}" target="_blank" style="color:#60a5fa; text-decoration:none;">
                             <strong>${page.title}</strong>
                         </a>
-                        <p style="font-size:0.9em; margin:5px 0;">${(page.description || '').slice(0, 180)}...</p>
+                        <p style="font-size:0.9em; color:#ccc; margin:5px 0 0 0;">
+                            ${page.description ? page.description.slice(0, 160) + '...' : ''}
+                        </p>
                     </div>
                 `;
             });
             html += `<hr>`;
         }
-        // ORBITAL DATA
-        if (data.tle?.length > 0) {
+
+        // Orbital Data (TLE)
+        if (data.tle && data.tle.length > 0) {
             html += `<h3>🛰️ Orbital Information</h3>`;
             data.tle.slice(0, 3).forEach(sat => {
                 const tle2 = sat.line2 ? sat.line2.split(/\s+/) : [];
@@ -127,39 +87,28 @@ Line 2: ${sat.line2 || 'N/A'}
                 `;
             });
             html += `<hr>`;
-        } else {
-            html += `<p><strong>No orbital data found.</strong><br>Try: ISS, Hubble, Starlink...</p><hr>`;
         }
 
-        // NASA Media and Exoplanets
-        if (data.nasaItems?.length > 0) {
-            html += `<h3>NASA Images & Videos</h3>`;
+        // NASA Media
+        if (data.nasaItems && data.nasaItems.length > 0) {
+            html += `<h3>📸 NASA Images & Videos</h3>`;
             data.nasaItems.slice(0, 6).forEach(item => {
                 const link = item.links?.[0]?.href;
                 if (!link) return;
                 const title = item.data?.[0]?.title || "NASA Media";
-                let media = '';
 
                 if (link.includes("youtube") || link.includes("youtu.be")) {
                     const videoId = link.split("v=")[1] || link.split("/").pop().split("?")[0];
-                    media = `<iframe width="420" height="236" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
-                } else if (link.endsWith('.mp4')) {
-                    media = `<video width="420" controls><source src="${link}" type="video/mp4"></video>`;
+                    html += `<iframe width="420" height="236" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="margin:10px 0;"></iframe><br>`;
                 } else {
-                    media = `<img src="${link}" width="420" style="border-radius:6px;" alt="${title}">`;
+                    html += `<img src="${link}" width="420" style="border-radius:8px; margin:10px 0;" alt="${title}"><br>`;
                 }
-
-                html += `
-                    <div style="margin:15px 0; padding:10px; border:1px solid #ddd; border-radius:8px;">
-                        ${media}
-                        <p><strong>${title}</strong></p>
-                    </div>
-                `;
             });
             html += `<hr>`;
         }
 
-        if (data.exoplanets?.length > 0) {
+        // Exoplanets
+        if (data.exoplanets && data.exoplanets.length > 0) {
             html += `<h3>🌌 Exoplanet Data</h3>`;
             data.exoplanets.slice(0, 6).forEach(planet => {
                 const name = planet.pl_name || "Unknown";
@@ -192,6 +141,6 @@ Line 2: ${sat.line2 || 'N/A'}
 
     } catch (err) {
         console.error(err);
-        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}<br>Please try again.</p>`;
     }
 }
